@@ -1,19 +1,26 @@
 package views;
 
 import dao.RendezvousDAO;
+import modeles.ModelLogin;
 import modeles.Patient;
 import modeles.Rendezvous;
+import utils.DBConnection;
 import utils.UserSession;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+
+import controllers.LoginControllers;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 import java.util.List;
+
+
 
 public class MedecinDashboard extends JFrame {
     private RendezvousDAO rendezvousDAO;
@@ -28,6 +35,7 @@ public class MedecinDashboard extends JFrame {
         initUI();
         loadRendezVousWithAnimation();
     }
+  
 
     private void initUI() {
         setTitle("Tableau de Bord du Médecin");
@@ -69,10 +77,7 @@ public class MedecinDashboard extends JFrame {
 
         JPanel leftInfoPanel = new JPanel(new GridLayout(3, 1));
         leftInfoPanel.setOpaque(false);
-        UserSession.medecinNom = "Baba";
-        UserSession.medecinPrenom = "Ahmed";
-        UserSession.medecinSpecialite = "Cardiologie";
-        UserSession. medecinId = 1;
+    
         JLabel nomLabel = new JLabel("👨‍⚕️ Dr. " + UserSession.medecinNom);
         JLabel prenomLabel = new JLabel("🧑 Prénom: " + UserSession.medecinPrenom);
         JLabel specLabel = new JLabel("🏥 Spécialité: " + UserSession.medecinSpecialite);
@@ -99,6 +104,12 @@ public class MedecinDashboard extends JFrame {
             }
         };
         centerPanel.setOpaque(false);
+        JButton logoutButton = new JButton("Se Déconnecter");
+        logoutButton.setFont(new Font("Poppins", Font.BOLD, 16));
+        logoutButton.setBackground(new Color(70, 130, 180)); // Steel Blue
+        logoutButton.setForeground(Color.WHITE);
+        logoutButton.setFocusPainted(false);
+        logoutButton.setPreferredSize(new Dimension(180, 45));
 
         // RDV Table
         String[] columns = {"ID", "Patient", "Date", "Heure", "Statut"};
@@ -180,17 +191,45 @@ public class MedecinDashboard extends JFrame {
         manageButton.setFocusPainted(false);
         manageButton.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
         manageButton.addActionListener(e -> {
-            new views.RendezvousFrame().setVisible(true);
+        	new views.RendezvousFrame(this).setVisible(true); // ✅ Fix: pass the dashboard reference
             dispose();
+        });
+        logoutButton.addActionListener(event -> {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "Êtes-vous sûr de vouloir vous déconnecter ?", "Confirmation",
+                JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Close the database connection
+                DBConnection.closeConnection();
+
+                // Clear UserSession data
+                UserSession.medecinId = 0;
+                UserSession.medecinNom = null;
+                UserSession.medecinPrenom = null;
+                UserSession.medecinSpecialite = null;
+                UserSession.setCurrentUserId(0);
+
+                // Show login window with fresh ModelLogin and LoginControllers
+                LoginView loginView = new LoginView();
+                ModelLogin modelLogin = new ModelLogin();
+                LoginControllers loginControllers = new LoginControllers(loginView, modelLogin);
+                loginView.setVisible(true);
+
+                // Close this dashboard
+                dispose();
+            }
         });
         manageButton.setPreferredSize(new Dimension(280, 50));
         bottomPanel.setOpaque(false);
         bottomPanel.add(manageButton);
         backgroundPanel.add(bottomPanel, BorderLayout.SOUTH);
+        bottomPanel.add(logoutButton);
 
         manageButton.setToolTipText("<html><b>Gérer les Rendez-vous</b><br>Ouvrir l'interface de gestion.</html>");
         rendezVousTable.setToolTipText("<html><b>Vos Rendez-vous</b><br>Cliquez pour plus d'options.</html>");
     }
+    
+   
 
     private void loadPatientsBySpecialty() {
         tableModelPatients.setRowCount(0);

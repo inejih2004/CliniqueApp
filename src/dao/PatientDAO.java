@@ -32,7 +32,7 @@ public class PatientDAO {
             }
         } catch (SQLException e) {
         	  e.printStackTrace(); 
-        	    JOptionPane.showMessageDialog(null, "Erreur lors de la connexion à la base de données.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        	 
         }
         return patients;
     }

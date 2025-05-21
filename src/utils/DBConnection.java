@@ -1,23 +1,55 @@
 package utils;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 
-@SuppressWarnings("unused")
 public class DBConnection {
-    private static Connection con;
+    private static Connection connection = null;
+    private static final String URL = "jdbc:mysql://localhost:3306/clinique?useSSL=false&serverTimezone=UTC";
+    private static final String USER = "root";
+    private static final String PASSWORD = "";
+    private static boolean loggedSuccess = false;
 
     public static Connection getConnection() {
-        if (con == null) {
-            try {
-                Class.forName("com.mysql.cj.jdbc.Driver");
-                con = DriverManager.getConnection("jdbc:mysql://localhost:3306/clinique", "root", "");
-                System.out.println("✅ Connexion réussie à la base de données.");
-            } catch (Exception e) {
-                System.out.println("❌ Erreur de connexion : " + e.getMessage());
+        try {
+            // Check if connection is valid
+            if (connection != null && !connection.isClosed() && connection.isValid(1)) {
+                return connection;
             }
+
+            // Close stale connection if exists
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (SQLException e) {
+                    System.err.println("Warning: Error closing stale connection: " + e.getMessage());
+                }
+            }
+
+            // Create new connection
+            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            connection.setAutoCommit(true);
+            if (!loggedSuccess) {
+                System.out.println("✅ Connexion réussie à la base de données.");
+                loggedSuccess = true;
+            }
+            return connection;
+        } catch (SQLException e) {
+            System.err.println("Erreur de connexion: " + e.getMessage());
+            throw new RuntimeException("Failed to connect to database: " + e.getMessage(), e);
         }
-        return con;
+    }
+
+    public static void closeConnection() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+                System.out.println("Connection closed.");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error closing connection: " + e.getMessage());
+        } finally {
+            connection = null;
+            loggedSuccess = false;
+        }
     }
 }

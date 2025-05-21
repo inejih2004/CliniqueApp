@@ -2,6 +2,7 @@ package dao;
 import modeles.Patient;
 import modeles.Rendezvous;
 import utils.DBConnection;
+import utils.UserSession;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -87,7 +88,7 @@ public class RendezvousDAO {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             
             pstmt.setInt(1, rdv.getPatientId());
-            pstmt.setInt(2, rdv.getMedecinId());
+            pstmt.setInt(2, UserSession.getCurrentUserId());
             pstmt.setDate(3, new java.sql.Date(rdv.getDateRdv().getTime()));
             pstmt.setString(4, rdv.getHeureRdv());
             pstmt.setString(5, rdv.getStatut());
